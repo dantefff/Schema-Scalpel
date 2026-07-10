@@ -615,13 +615,22 @@ function scsc_render_metabox_preview( $post ) {
 			});
 
 			// Auto-save on main post save
+			if (!window.wp || !wp.data || typeof wp.data.select !== 'function' || typeof wp.data.subscribe !== 'function') {
+				return;
+			}
+
 			const { select, subscribe, dispatch } = wp.data;
 			let wasSaving = false;
 
 			const unsubscribe = subscribe(() => {
-				const isSaving      = select('core/editor').isSavingPost();
-				const isAutosaving  = select('core/editor').isAutosavingPost();
-				const hasFinished   = select('core/editor').didPostSaveRequestSucceed();
+				const editorStore = select('core/editor');
+				if (!editorStore || typeof editorStore.isSavingPost !== 'function') {
+					return;
+				}
+
+				const isSaving      = editorStore.isSavingPost();
+				const isAutosaving  = typeof editorStore.isAutosavingPost === 'function' ? editorStore.isAutosavingPost() : false;
+				const hasFinished   = typeof editorStore.didPostSaveRequestSucceed === 'function' ? editorStore.didPostSaveRequestSucceed() : false;
 
 				if (wasSaving && !isSaving && hasFinished && !isAutosaving) {
 
